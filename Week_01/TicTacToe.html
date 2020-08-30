@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    .cell {
+      display: inline-block;
+      width: 100px;
+      height: 100px;
+      font-size: 40px;
+      line-height: 100px;
+      text-align: center;
+      vertical-align: middle;
+      background: green;
+      border: 1px solid #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap"></div>
+  <script>
+    const ROWS = 3, COLS = 3;
+    const RESULT = {
+      WIN: 1,
+      FAIL: -1,
+      DRAW: 0,
+    }
+    const TYPE = {
+      ROUND: 1,
+      CROSS: 2,
+    }
+    let finish = false;
+    let partten = [
+      [0, 0, 0],
+      [0, 0, 0],
+      [0, 0, 0],
+    ]
+    let piece = TYPE.ROUND; // 当前的棋子类型
+    function show() {
+      const wrap = document.querySelector('.wrap');
+      wrap.innerHTML = '';
+      for (let i = 0; i < ROWS; i++) {
+        for (let j = 0; j < COLS; j++) {
+          const cell = document.createElement('div');
+          cell.classList.add('cell');
+          cell.innerText = partten[i][j] === TYPE.CROSS ? '❌' : partten[i][j] === TYPE.ROUND ? '⭕' : '';
+          cell.addEventListener('click', () => {
+            if (finish) return;
+            userMove(i, j)
+          });
+          wrap.appendChild(cell);
+        }
+        wrap.appendChild(document.createElement('br'));
+      }
+    }
+
+    function userMove(x, y) {
+      if (partten[x][y]) return;
+      partten[x][y] = piece;
+      // 检查当前落子之后是否赢了
+      if(check(partten, piece)) {
+        alert(piece === TYPE.CROSS ? '❌ is the winner' : piece === TYPE.ROUND ? '⭕ is the winner' : '平局');
+      }
+      piece = 3 - piece;
+      // 检查下一步是否要
+      if (willWin(partten, piece)) {
+        console.log(piece === TYPE.CROSS ? '❌ is will the winner' : piece === TYPE.ROUND ? '⭕ is will the winner' : '平局')
+      }
+      console.log(bestChoice(partten, piece))
+      show();
+      computerMove();
+    }
+
+    function computerMove() {
+      let choice = bestChoice(partten, piece)
+      if (choice.point) {
+        partten[choice.point[0]][choice.point[1]] = piece;
+      }
+      if (check(partten, piece)) {
+        finish = true;
+        alert(piece === TYPE.CROSS ? '❌ is the winner' : piece === TYPE.ROUND ? '⭕ is the winner' : '平局');
+      }
+      piece = 3 - piece;
+      show();
+    }
+
+    function check(partten, piece) {
+      for (let i = 0; i < ROWS; i++) {
+        let win = true;
+        for (let j = 0; j < COLS; j++) {
+          if (partten[i][j] !== piece) {
+            win = false;
+          }
+        }
+        if (win) return true;
+      }
+
+      for (let j = 0; j < COLS; j++) {
+        let win = true;
+        for (let i = 0; i < ROWS; i++) {
+          if (partten[i][j] !== piece) {
+            win = false;
+          }
+        }
+        if (win) return true;
+      }
+
+      {
+        let win = true;
+        for (let i = 0; i < ROWS; i++) {
+          if (partten[i][i] !== piece) {
+            win = false;
+          }
+        }
+        if (win) return true;
+      }
+
+      {
+        let win = true;
+        for (let i = 0; i < ROWS; i++) {
+          if (partten[i][ROWS - 1 - i] !== piece) {
+            win = false;
+          }
+        }
+        if (win) return true;
+      }
+    }
+
+    function clone(partten) {
+      return JSON.parse(JSON.stringify(partten));
+    }
+
+    function willWin(partten, piece) {
+      for (let i = 0; i < ROWS; i++) {
+        for (let j = 0; j < COLS; j++) {
+          if (partten[i][j]) continue;
+          const tmp = clone(partten);
+          tmp[i][j] = piece;
+          if (check(tmp, piece)) {
+            return [i, j];
+          }
+        }
+      }
+      return null;
+    }
+
+    function bestChoice(partten, piece) {
+      let p;
+      if (p = willWin(partten, piece)) {
+        return {
+          point: p,
+          result: RESULT.WIN
+        }
+      }
+      let result = -2;
+      let point = null;
+      outer:for (let i = 0; i < ROWS; i++) {
+        for (let j = 0; j < COLS; j++) {
+          if(partten[i][j]) continue;
+          const tmp = clone(partten);
+          tmp[i][j] = piece;
+          let r = bestChoice(tmp, 3 - piece).result;
+
+          if (- r > result) {
+            result = -r;
+            point = [i, j];
+          }
+          if (result === RESULT.WIN) {
+            break outer;
+          }
+        }
+      }
+      return {
+        result: point ? result : RESULT.DRAW,
+        point
+      }
+    }
+
+    show();
+  </script>
+</body>
+</html>
